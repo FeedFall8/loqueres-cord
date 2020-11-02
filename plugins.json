@@ -1,0 +1,4 @@
+{
+    "pluginfolder": "plugins",
+    "plugins": ["logs","basic-commands"]
+}

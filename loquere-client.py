@@ -1,16 +1,37 @@
 server=__import__('server')
-version='1.0.0'
+version='1.0.1'
 import time
 import _thread
-import threading,pickle
-
+import threading,pickle,os
+def runserver():
+    try:
+        os.system('loquere-server.py')
+    except Exception as e:
+        print("error:",e)
+    
+def hub():
+    print(f'loquere chat client {version}')
+    modes=['host - type to host a server','chat - type to chat']
+    print('====modes=====')
+    for m in modes:
+        print(m)
+    print('==============')
+    mode = input('mode: ')
+    
+    if mode == 'host':
+        runserver()
+    if mode == 'chat':
+        main()
 def main():
-    print(f'loquere client {version}')
+    
+    print(f'loquere chat lient {version}')
+    
+    
     print("server list\n===================")
     for ip in open("servers.txt"):
         print(ip)
     print("===============")
-    info=input("Connect > IP/port >")
+    info=input("connect > IP/port:")
     try:
         client = server.Client(info.split(':')[0],int(info.split(':')[1]))
     except  Exception as e:
@@ -54,4 +75,4 @@ def main():
         reload(ng)
             
     
-main()
+hub()

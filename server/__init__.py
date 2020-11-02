@@ -1,5 +1,13 @@
-import socket,datetime,random,time
+import socket,datetime,random,time,json,os,sys
+
 from _thread import *
+try:
+    plugininfo = json.load(open('plugins.json'))
+except FileNotFoundError:
+    f = open('plugins.json','w')
+    json.dump({'pluginfolder':"",'plugins':[]},f,indent=4)
+    f.close()
+    plugininfo = json.load(open('plugins.json'))
 class message:
     def __init__(self,text):
         self.text=text
@@ -8,16 +16,22 @@ class plugin:
     def __init__(self,name,script):
         self.name=name
         self.script=script
-    def run(self):
-        self.script.run()
-class pluginmanager:
+    def run(self,args):
+        self.script.run(args)
+class plugin_manager:
     plugins = []
-    def load_plugin(fp):
-        f = open(fp)
-        plugins.append(plugin(f.name,__import__(fp)))
-    def run_plugins():
-        for plugin in plugins:
-            plugin.run()
+    def load_plugins():
+        sys.path.append(plugininfo['pluginfolder'])
+        for file in plugininfo['plugins']:
+            print(f"attempting to load:{file}")
+            p = __import__(file)#os.path.join(os.path.abspath(''),os.path.join(plugininfo['pluginfolder'],file)))
+            plugin_manager.plugins.append(plugin(file,p))
+            print(f"loaded:{file}")
+    def run_plugins(**inputs):
+        for plugin in plugin_manager.plugins:
+            plugin.run(inputs)
+            
+
 def blank(**args):
     pass
 def hostname():
@@ -63,8 +77,13 @@ class Server:
             print(f'failed to bind to addresses -> {e}')
         self.server.listen(maxconnections)
     def threaded_client(self,client,log=False):
+        cs={"closeconnection":False,"banip":False}
         try:
             while self.running == True:
+                if  cs["closeconnection"]==True:
+                    print('closing connection to: ',client)
+                    break
+                #plugin_manager.run_plugins(log=log,Client=client)
                 self.mainbehavior(Client=client)
                 #print(self.running)
                 if self.running==False:
@@ -75,6 +94,7 @@ class Server:
                     if log:
                         print(f"recv {data}")
                     self.OnDataBehavior(data=data,Client=client)
+                    plugin_manager.run_plugins(log=log,Client=client,data=data,cs=cs)
                 else:
                     if log:
                         print(f'communication ended with {client}')
@@ -82,11 +102,13 @@ class Server:
         except Exception as e:
             print('error: ',e)
     def run(self,log=False,threaded=False,firstreply=None):
+        plugin_manager.load_plugins()
         self.running=True
         while self.running==True:
+            plugin_manager.run_plugins(log=log,threading=threaded,firstreply=firstreply)
             #print('main',self.running)
             if self.server==False:
-                raise RuntimeError("Server: Acception shutdown")
+                raise RuntimeError("Server: Connection Acception system, shutdown")
             con,addr = self.server.accept()
             if log:
                 print(f"connected to server {addr} at {datetime.datetime.now()}")
