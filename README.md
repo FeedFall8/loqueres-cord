@@ -8,5 +8,6 @@ then launch loqueres-client (please note you will need to have the required modu
 
 - modifcations and plugins
 
-not finished yet!
+docs soon
+
 
